@@ -17,12 +17,11 @@
 
 package org.apache.bcel.generic;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import org.apache.bcel.AbstractTestCase;
-import org.apache.bcel.classfile.JavaClass;
+import org.apache.bcel.classfile.*;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Verify that a constant pool containing dynamic constants (condy) - in this case created by JaCoCo - can be read and
@@ -37,4 +36,24 @@ public class JiraBcel362TestCase extends AbstractTestCase {
         assertTrue(constantPoolGen.lookupUtf8("$jacocoData") != -1);
     }
 
+    @Test
+    public void testBCEL370() throws ClassNotFoundException {
+        final JavaClass clazz = getTestJavaClass("com.Foo");
+        final ConstantPoolGen cpg = new ConstantPoolGen(clazz.getConstantPool());
+        for (final Method method : clazz.getMethods()) {
+            final Code code = method.getCode();
+            if (code != null) {
+                final InstructionList instructionList = new InstructionList(code.getCode());
+                for (final InstructionHandle instructionHandle : instructionList) {
+                    instructionHandle.accept(new EmptyVisitor() {
+                        @Override
+                        public void visitLDC(LDC obj) {
+                            assertDoesNotThrow(() -> obj.getType(cpg));
+                            assertDoesNotThrow(() -> obj.getValue(cpg));
+                        }
+                    });
+                }
+            }
+        }
+    }
 }
